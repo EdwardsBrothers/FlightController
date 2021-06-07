@@ -6,7 +6,6 @@ use std::{fmt, ops::{Neg, Add, Sub, Mul, AddAssign, SubAssign, MulAssign}};
 #[derive(Debug, Copy, Clone, PartialEq)]
 struct Quaternion { s: f64, x: f64, y: f64, z: f64 }
 
-
 impl Quaternion {
     pub fn new(s:f64, x:f64, y:f64, z:f64) -> Self {
         Self {s,x,y,z}
@@ -16,9 +15,18 @@ impl Quaternion {
         Self { s: self.s, x: -self.x, y: -self.y, z: -self.z }
     } 
 
+    fn normsq(self) -> f64 {
+        self.s*self.s + self.x*self.x + self.y*self.y + self.z*self.z
+    }
+
     fn norm(self) -> f64 {
-        (self.s*self.s + self.x*self.x + self.y*self.y + self.z*self.z).sqrt()
-    }  
+        self.normsq().sqrt()
+    }
+    
+    fn inv(self) -> Self {
+        let n = self.normsq();
+        Self { s: self.s/n, x: -self.x/n, y: -self.y/n, z: -self.z/n }
+    }
 }
 
 
@@ -164,6 +172,11 @@ mod tests {
         assert_eq!(j*i, -k);
     }
 
+    #[test]
+    fn test_inv() {
+        let p = Quaternion::new(1.0, 2.0, 3.0, 4.0);
+        assert_eq!(p*p.inv(), Quaternion::new(1.0, 0.0, 0.0, 0.0));
+    }
 
     #[test]
     fn test_debug() {
