@@ -3,13 +3,13 @@
 use std::{fmt, ops::{Add, Sub}};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-struct Quaternion { r: f64, u: f64, v: f64, w: f64 }
+struct Quaternion { s: f64, x: f64, y: f64, z: f64 }
 
 
 impl Add for Quaternion {
     type Output = Self;
     fn add(self, other: Self) -> Self {
-        Self{r: self.r+other.r, u: self.u+other.u, v: self.v+other.v, w: self.w+other.w}
+        Self{s: self.s+other.s, x: self.x+other.x, y: self.y+other.y, z: self.z+other.z}
     }
 }
 
@@ -17,26 +17,26 @@ impl Add for Quaternion {
 impl Sub for Quaternion {
     type Output = Self;
     fn sub(self, other: Self) -> Self {
-        Self{r: self.r-other.r, u: self.u-other.u, v: self.v-other.v, w: self.w-other.w}
+        Self{s: self.s-other.s, x: self.x-other.x, y: self.y-other.y, z: self.z-other.z}
     }
 }
 
 
 impl fmt::Display for Quaternion {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} + {}i + {}j + {}k", self.r, self.u, self.v, self.w)
+        write!(f, "{} + {}i + {}j + {}k", self.s, self.x, self.y, self.z)
     }
 }
 
 impl fmt::LowerExp for Quaternion {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} + {}i + {}j + {}k", self.r, self.u, self.v, self.w)
+        write!(f, "{} + {}i + {}j + {}k", self.s, self.x, self.y, self.z)
     }
 }
 
 impl Quaternion {
-    pub fn new(r:f64, u:f64, v:f64, w:f64) -> Self {
-        Self {r,u,v,w}
+    pub fn new(s:f64, x:f64, y:f64, z:f64) -> Self {
+        Self {s,x,y,z}
     }
 }
 
@@ -49,17 +49,17 @@ mod tests {
     #[test]
     fn test_new() {
         let q = Quaternion::new(1.0, 2.0, 3.0, 4.0);
-        assert_eq!(q.r, 1.0);
-        assert_eq!(q.u, 2.0);
-        assert_eq!(q.v, 3.0);
-        assert_eq!(q.w, 4.0);
+        assert_eq!(q.s, 1.0);
+        assert_eq!(q.x, 2.0);
+        assert_eq!(q.y, 3.0);
+        assert_eq!(q.z, 4.0);
     }
 
     #[test]
     fn test_debug() {
         let q = Quaternion::new(1.0, 2.0, 3.0, 4.0);
         let result = format!("{:?}", q);
-        let expect = "Quaternion { r: 1.0, u: 2.0, v: 3.0, w: 4.0 }";
+        let expect = "Quaternion { s: 1.0, x: 2.0, y: 3.0, z: 4.0 }";
         assert_eq!(expect,result);
     }
 
