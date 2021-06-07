@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use std::{fmt, ops::{Neg, Add, Sub, Mul, AddAssign, SubAssign, MulAssign}};
+use std::{fmt, ops::{Neg, Add, Sub, Mul, Div, AddAssign, SubAssign, MulAssign}};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 struct Quaternion { s: f64, x: f64, y: f64, z: f64 }
@@ -20,6 +20,10 @@ impl Quaternion {
 
     fn norm(self) -> f64 {
         self.normsq().sqrt()
+    }
+
+    fn dot(self, rhs: Quaternion) -> f64 {
+        self.s*rhs.s + self.x*rhs.x + self.y*rhs.y + self.z*rhs.z 
     }
     
     fn inv(self) -> Self {
@@ -64,6 +68,13 @@ impl Mul for Quaternion {
     }
 }
 
+impl Div for Quaternion {
+    type Output = Self;
+    fn div(self, rhs: Self) -> Self {
+        self*rhs.inv()
+    }
+}
+
 
 // Assignment operators
 impl AddAssign for Quaternion {
@@ -94,7 +105,7 @@ impl fmt::Display for Quaternion {
 
 impl fmt::LowerExp for Quaternion {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} + {}i + {}j + {}k", self.s, self.x, self.y, self.z)
+        write!(f, "|{}|", self.norm())
     }
 }
 
