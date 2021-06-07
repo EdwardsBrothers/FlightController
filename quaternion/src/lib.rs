@@ -2,7 +2,6 @@
 
 use std::{fmt, ops::{Neg, Add, Sub, Mul, AddAssign, SubAssign, MulAssign}};
 
-
 #[derive(Debug, Copy, Clone, PartialEq)]
 struct Quaternion { s: f64, x: f64, y: f64, z: f64 }
 
@@ -176,6 +175,7 @@ mod tests {
     fn test_inv() {
         let p = Quaternion::new(1.0, 2.0, 3.0, 4.0);
         assert_eq!(p*p.inv(), Quaternion::new(1.0, 0.0, 0.0, 0.0));
+        assert_eq!(p.inv()*p, Quaternion::new(1.0, 0.0, 0.0, 0.0));
     }
 
     #[test]
@@ -193,8 +193,8 @@ mod tests {
         let expect = "1 + 2i + 3j + 4k";
         assert_eq!(expect,result);
     }
-    #[test]
 
+    #[test]
     fn test_display_exp() {
         let q = Quaternion::new(1.0, 2.0, 3.0, 4.0);
         let result = format!("{:e}", q);
