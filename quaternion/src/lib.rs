@@ -3,11 +3,8 @@
 use std::{fmt, ops::{Neg, Add, Sub, Mul, AddAssign, SubAssign, MulAssign}};
 
 
-
 #[derive(Debug, Copy, Clone, PartialEq)]
 struct Quaternion { s: f64, x: f64, y: f64, z: f64 }
-
-
 
 
 impl Quaternion {
@@ -21,7 +18,7 @@ impl Quaternion {
 
     fn norm(self) -> f64 {
         (self.s*self.s + self.x*self.x + self.y*self.y + self.z*self.z).sqrt()
-    } 
+    }  
 }
 
 
@@ -141,6 +138,8 @@ mod tests {
         let q2 = Quaternion::new(4.0, 3.0, 2.0, 1.0);
         let q3 = Quaternion::new(5.0, 5.0, 5.0, 5.0);
         assert_eq!(q1+q2, q3);
+        assert_eq!(q1+q2, q2+q1);
+        assert_eq!(q1+(q2+q3), (q1+q2)+q3);
     }
 
     #[test]
