@@ -38,7 +38,6 @@ impl Quaternion {
         Self { s: self.s/n, x: -self.x/n, y: -self.y/n, z: -self.z/n }
     }
 
-    #[inline]
     fn exp(self) -> Self {
         let ph = (self.x*self.x + self.y*self.y + self.z*self.z).sqrt();
         let q0 = (self.s).exp();
@@ -46,7 +45,6 @@ impl Quaternion {
         Self {s: q0*ph.cos(), x: qs*self.x, y: qs*self.y,  z: qs*self.z}
     }
 
-    #[inline]
     fn ln(self) -> Self {
         let phsq = self.x*self.x + self.y*self.y + self.z*self.z;
         let q0 = (self.s*self.s + phsq).sqrt();
@@ -57,6 +55,14 @@ impl Quaternion {
             Self {s: q0.ln(), x: qs*self.x, y: qs*self.y,  z: qs*self.z}    
         }
     }
+
+    // fn pow(self, x: Scalar) -> Self {
+    //     let phsq = self.x*self.x + self.y*self.y + self.z*self.z;
+    //     let ph = phsq.sqrt();
+    //     let q0 = (self.s*self.s + phsq).sqrt().powf(x);
+    //     let qs = q0*((x*ph) + Scalar::EPSILON).sin()/((x*ph) + Scalar::EPSILON);
+    //     Self {s: q0*(x*ph).cos(), x: qs*self.x, y: qs*self.y,  z: qs*self.z}
+    // }
 }
 
 
@@ -254,7 +260,10 @@ mod tests {
         let p = Quaternion::new(-2.0, -2.0, 7.0, -4.0);
         assert_eq!(q.norm(), (q.s*q.s + q.x*q.x + q.y*q.y + q.z*q.z).sqrt()); // (3.1)
         assert_eq!((q.conj()).norm(), q.norm()); // (3.2)
-        assert!(((q*p).norm()-q.norm()*p.norm()).abs()<1e-14); // (3.3)
+        // assert_eq!(((q*p).norm()-q.norm()*p.norm()),0.0); // (3.3)
+        let result = ((q*p).norm()-q.norm()*p.norm()).abs();
+        let tol = 1e-14;
+        assert!(result<tol, "{:e}<{:e}",result,tol);
     }
 
     #[test]
@@ -290,6 +299,12 @@ mod tests {
         assert_eq!(Quaternion::new(0.0, 0.0, 1.0, 0.0).ln(), Quaternion{s: 0.0, x: 0.0, y: pi_2, z: 0.0});
         assert_eq!(Quaternion::new(0.0, 0.0, 0.0, 1.0).ln(), Quaternion{s: 0.0, x: 0.0, y: 0.0, z: pi_2});
     }
+
+    // #[test]
+    // fn test_pow() {
+    //     let q = Quaternion::new(1.0, 2.0, 3.0, 4.0);
+    //     assert_eq!(q.pow(2.0).pow(0.5), q);
+    // }
 
     #[test]
     fn test_add() {
