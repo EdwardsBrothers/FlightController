@@ -1,88 +1,156 @@
 #![allow(dead_code)]
 
-type Float = f64;
+type Scalar = f64;
 
-use std::{fmt, ops::{Neg, Add, Sub, Mul, Div, AddAssign, SubAssign, MulAssign}};
+use std::{fmt, ops::{Neg, Add, Sub, Mul, Div, AddAssign, SubAssign, MulAssign, DivAssign}};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-struct Quaternion { s: Float, x: Float, y: Float, z: Float }
+struct Quaternion { s: Scalar, x: Scalar, y: Scalar, z: Scalar }
 
 impl Quaternion {
-    pub fn new(s:Float, x:Float, y:Float, z:Float) -> Self {
+    pub fn new(s:Scalar, x:Scalar, y:Scalar, z:Scalar) -> Self {
         Self {s,x,y,z}
     }
 
-    fn exp(self) -> Self {
-        let ph = (self.x*self.x + self.y*self.y + self.z*self.z).sqrt();
-        let q0 = (self.s).exp();
-        let x = ph.abs()+Float::EPSILON;
-        let qs = q0*x.sin()/x;
-        Self {s: q0*ph.cos(), x: qs*self.x, y: qs*self.y,  z: qs*self.z}
-    }
-
+    #[inline]
     fn conj(self) -> Self {
         Self { s: self.s, x: -self.x, y: -self.y, z: -self.z }
     } 
 
-    fn normsq(self) -> Float {
+    #[inline]
+    fn normsq(self) -> Scalar {
         self.s*self.s + self.x*self.x + self.y*self.y + self.z*self.z
     }
 
-    fn norm(self) -> Float {
+    #[inline]
+    fn norm(self) -> Scalar {
         self.normsq().sqrt()
     }
 
-    fn dot(self, rhs: Quaternion) -> Float {
+    #[inline]
+    fn dot(self, rhs: Quaternion) -> Scalar {
         self.s*rhs.s + self.x*rhs.x + self.y*rhs.y + self.z*rhs.z 
     }
     
+    #[inline]
     fn inv(self) -> Self {
         let n = self.normsq();
         Self { s: self.s/n, x: -self.x/n, y: -self.y/n, z: -self.z/n }
     }
-}
 
+    #[inline]
+    fn exp(self) -> Self {
+        let ph = (self.x*self.x + self.y*self.y + self.z*self.z).sqrt();
+        let q0 = (self.s).exp();
+        let qs = q0*(ph+Scalar::EPSILON).sin()/(ph+Scalar::EPSILON);
+        Self {s: q0*ph.cos(), x: qs*self.x, y: qs*self.y,  z: qs*self.z}
+    }
 
-// Operators
-
-impl Neg for Quaternion {
-    type Output = Self;
-    fn neg(self) -> Self {
-        Self { s: -self.s, x: -self.x, y: -self.y, z: -self.z }
+    #[inline]
+    fn ln(self) -> Self {
+        let phsq = self.x*self.x + self.y*self.y + self.z*self.z;
+        let q0 = (self.s*self.s + phsq).sqrt();
+        if phsq <= 0.0 {
+            Self {s: q0.ln(), x: 0.0, y: 0.0,  z: 0.0}
+        } else {
+            let qs = (self.s/q0).acos()/phsq.sqrt();
+            Self {s: q0.ln(), x: qs*self.x, y: qs*self.y,  z: qs*self.z}    
+        }
     }
 }
 
+
+// Addition
+
 impl Add for Quaternion {
     type Output = Self;
+    #[inline]
     fn add(self, rhs: Self) -> Self {
         Self { s: self.s + rhs.s, x: self.x + rhs.x, y: self.y + rhs.y, z: self.z + rhs.z }
     }
 }
 
+impl Add<Scalar> for Quaternion {
+    type Output = Self;
+    #[inline]
+    fn add(self, rhs:Scalar) -> Self {
+        Self { s: self.s + rhs, x: self.x, y: self.y, z: self.z }        
+    }
+}
+
+impl Add<Quaternion> for Scalar {
+    type Output = Quaternion;
+    #[inline]
+    fn add(self, rhs:Quaternion) -> Quaternion {
+        Quaternion { s: self + rhs.s, x: rhs.x, y: rhs.y, z: rhs.z }        
+    }
+}
+
+impl AddAssign for Quaternion {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs;
+    }
+}
+
+impl AddAssign<Scalar> for Quaternion {
+    fn add_assign(&mut self, rhs: Scalar) {
+        *self = *self + rhs;
+    }
+}
+
+
+// Subtraction
+
+impl Neg for Quaternion {
+    type Output = Self;
+    #[inline]
+    fn neg(self) -> Self {
+        Self { s: -self.s, x: -self.x, y: -self.y, z: -self.z }
+    }
+}
+
 impl Sub for Quaternion {
     type Output = Self;
+    #[inline]
     fn sub(self, rhs: Self) -> Self {
-        Self {s: self.s - rhs.s, x: self.x - rhs.x, y: self.y - rhs.y, z: self.z - rhs.z}
+        Self { s: self.s - rhs.s, x: self.x - rhs.x, y: self.y - rhs.y, z: self.z - rhs.z }
     }
 }
 
-
-impl Mul<Float> for Quaternion {
+impl Sub<Scalar> for Quaternion {
     type Output = Self;
-    fn mul(self, rhs:Float) -> Self {
-        Self { s: self.s * rhs, x: self.x * rhs, y: self.y * rhs, z: self.z * rhs }        
+    #[inline]
+    fn sub(self, rhs:Scalar) -> Self {
+        Self { s: self.s - rhs, x: self.x, y: self.y, z: self.z }        
     }
 }
 
-impl Mul<Quaternion> for Float {
+impl Sub<Quaternion> for Scalar {
     type Output = Quaternion;
-    fn mul(self, rhs:Quaternion) -> Quaternion {
-        Quaternion { s: self * rhs.s, x: self * rhs.x, y: self * rhs.y, z: self * rhs.z }        
+    #[inline]
+    fn sub(self, rhs:Quaternion) -> Quaternion {
+        Quaternion { s: self - rhs.s, x: -rhs.x, y: -rhs.y, z: -rhs.z }        
     }
 }
+
+impl SubAssign for Quaternion {
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = *self - rhs;
+    }
+}
+
+impl SubAssign<Scalar> for Quaternion {
+    fn sub_assign(&mut self, rhs: Scalar) {
+        *self = *self - rhs;
+    }
+}
+
+
+// Multiplication
 
 impl Mul for Quaternion {
     type Output = Self;
+    #[inline]
     fn mul(self, rhs: Self) -> Self {
         Self {
             s: self.s*rhs.s - self.x*rhs.x - self.y*rhs.y - self.z*rhs.z, 
@@ -93,30 +161,19 @@ impl Mul for Quaternion {
     }
 }
 
-impl Div<Float> for Quaternion {
+impl Mul<Scalar> for Quaternion {
     type Output = Self;
-    fn div(self, rhs:Float) -> Self {
-        Self { s: self.s / rhs, x: self.x / rhs, y: self.y / rhs, z: self.z / rhs }        
+    #[inline]
+    fn mul(self, rhs:Scalar) -> Self {
+        Self { s: self.s * rhs, x: self.x * rhs, y: self.y * rhs, z: self.z * rhs }        
     }
 }
 
-impl Div for Quaternion {
-    type Output = Self;
-    fn div(self, rhs: Self) -> Self {
-        self*rhs.inv()
-    }
-}
-
-// Assignment operators
-impl AddAssign for Quaternion {
-    fn add_assign(&mut self, rhs: Self) {
-        *self = *self + rhs;
-    }
-}
-
-impl SubAssign for Quaternion {
-    fn sub_assign(&mut self, rhs: Self) {
-        *self = *self - rhs;
+impl Mul<Quaternion> for Scalar {
+    type Output = Quaternion;
+    #[inline]
+    fn mul(self, rhs:Quaternion) -> Quaternion {
+        Quaternion { s: self * rhs.s, x: self * rhs.x, y: self * rhs.y, z: self * rhs.z }        
     }
 }
 
@@ -125,6 +182,30 @@ impl MulAssign for Quaternion {
         *self = *self * rhs;
     }
 }
+
+impl MulAssign<Scalar> for Quaternion {
+    fn mul_assign(&mut self, rhs: Scalar) {
+        *self = *self * rhs;
+    }
+}
+
+
+// Division
+
+impl Div<Scalar> for Quaternion {
+    type Output = Self;
+    #[inline]
+    fn div(self, rhs:Scalar) -> Self {
+        Self { s: self.s / rhs, x: self.x / rhs, y: self.y / rhs, z: self.z / rhs }        
+    }
+}
+
+impl DivAssign<Scalar> for Quaternion {
+    fn div_assign(&mut self, rhs: Scalar) {
+        *self = *self / rhs;
+    }
+}
+
 
 // Display 
 impl fmt::Display for Quaternion {
@@ -137,7 +218,7 @@ impl fmt::Display for Quaternion {
 //     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         
 //         let q = *self/self.norm();
-//         write!(f, "|{}|, phi: {}, n: {} {} {}", self.norm(), )
+//         write!(f, "|{}|, phi: {}, n: {}i {}j {}k", self.norm(), )
 //     }
 // }
 
@@ -155,12 +236,6 @@ mod tests {
         assert_eq!(q.z, 4.0);
     }
 
-    #[test]
-    fn test_neg() {
-        let q1 = Quaternion::new(1.0, 2.0, 3.0, 4.0);
-        let q2 = Quaternion::new(-1.0, -2.0, -3.0, -4.0);
-        assert_eq!(-q1, q2);
-    }
 
     #[test]
     fn test_conj() {
@@ -183,13 +258,61 @@ mod tests {
     }
 
     #[test]
+    fn test_dot() {
+        let p = Quaternion::new(1.0, -2.0, -3.0, 1.0);
+        let q = Quaternion::new(2.0, -2.0, 1.0, -3.0);
+        assert_eq!(p.dot(q), 0.0);
+    }
+
+    #[test]
+    fn test_inv() {
+        let p = Quaternion::new(1.0, -2.0, 3.0, 4.0);
+        assert_eq!(p*p.inv(), Quaternion::new(1.0, 0.0, 0.0, 0.0));
+        assert_eq!(p.inv()*p, Quaternion::new(1.0, 0.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn test_exp() {
+        let one: Scalar = 1.0;
+        assert_eq!(Quaternion::new(0.0, 0.0, 0.0, 0.0).exp(), Quaternion{s: 1.0, x: 0.0, y: 0.0, z: 0.0});
+        assert_eq!(Quaternion::new(1.0, 0.0, 0.0, 0.0).exp(), Quaternion{s: one.exp(), x: 0.0, y: 0.0, z: 0.0});
+        // use std::f64::consts::FRAC_PI_2;
+        // assert_eq!(Quaternion::new(0.0, FRAC_PI_2, 0.0, 0.0).exp(), Quaternion{ s: 0.0, x: 1.0, y: 0.0, z: 0.0});
+    }
+
+    #[test]
+    fn test_ln() {
+        let negone: Scalar = 1.0;
+        let pi_2 = 2.0*negone.atan();
+        assert_eq!(Quaternion::new(0.0, 0.0, 0.0, 0.0).ln(), Quaternion{s: Scalar::NEG_INFINITY, x: 0.0, y: 0.0, z: 0.0});
+        assert_eq!(Quaternion::new(1.0, 0.0, 0.0, 0.0).ln(), Quaternion{s: 0.0, x: 0.0, y: 0.0, z: 0.0});
+        assert_eq!(Quaternion::new(0.0, 1.0, 0.0, 0.0).ln(), Quaternion{s: 0.0, x: pi_2, y: 0.0, z: 0.0});
+        assert_eq!(Quaternion::new(0.0, 0.0, 1.0, 0.0).ln(), Quaternion{s: 0.0, x: 0.0, y: pi_2, z: 0.0});
+        assert_eq!(Quaternion::new(0.0, 0.0, 0.0, 1.0).ln(), Quaternion{s: 0.0, x: 0.0, y: 0.0, z: pi_2});
+    }
+
+    #[test]
     fn test_add() {
         let q1 = Quaternion::new(1.0, 2.0, 3.0, 4.0);
         let q2 = Quaternion::new(4.0, 3.0, 2.0, 1.0);
         let q3 = Quaternion::new(5.0, 5.0, 5.0, 5.0);
+        let mut q0 = Quaternion::new(0.0, 0.0, 0.0, 0.0);
+        q0 += q1;
+        q0 += 3.0;
+        assert_eq!(q0, Quaternion::new(4.0, 2.0, 3.0, 4.0));
+        assert_eq!(q1+3.0, Quaternion::new(4.0, 2.0, 3.0, 4.0));  // scalar addition right
+        assert_eq!(3.0+q1, Quaternion::new(4.0, 2.0, 3.0, 4.0));  // scalar addition left
         assert_eq!(q1+q2, q3);
         assert_eq!(q1+q2, q2+q1);
         assert_eq!(q1+(q2+q3), (q1+q2)+q3);
+    }
+
+    
+    #[test]
+    fn test_neg() {
+        let q1 = Quaternion::new(1.0, 2.0, 3.0, 4.0);
+        let q2 = Quaternion::new(-1.0, -2.0, -3.0, -4.0);
+        assert_eq!(-q1, q2);
     }
 
     #[test]
@@ -197,9 +320,35 @@ mod tests {
         let q1 = Quaternion::new(1.0, 2.0, 3.0, 4.0);
         let q2 = Quaternion::new(4.0, 3.0, 2.0, 1.0);
         let q3 = Quaternion::new(-3.0, -1.0, 1.0, 3.0);
+        let mut q0 = Quaternion::new(0.0, 0.0, 0.0, 0.0);
+        q0 -= q1;
+        q0 -= 3.0;
+        assert_eq!(q0, Quaternion::new(-4.0, -2.0, -3.0, -4.0));
+        assert_eq!(q1-3.0, Quaternion::new(-2.0, 2.0, 3.0, 4.0));  // scalar addition right
+        assert_eq!(3.0-q1, Quaternion::new(2.0, -2.0, -3.0, -4.0));  // scalar addition left
         assert_eq!(q1-q2, q3);
+        assert_eq!(q1-q2, -(q2-q1));
+        assert_eq!(q1-(q2-q3), (q1-q2)+q3);
     }
 
+
+    #[test]
+    fn test_mul() {
+        let i = Quaternion::new(0.0, 1.0, 0.0, 0.0);
+        let j = Quaternion::new(0.0, 0.0, 1.0, 0.0);
+        let k = Quaternion::new(0.0, 0.0, 0.0, 1.0);
+        let e = Quaternion::new(-1.0,0.0,0.0,0.0);
+        assert_eq!(i*j*k, e);
+        assert_eq!(i*i, e);
+        assert_eq!(j*j, e);
+        assert_eq!(k*k, e);
+        assert_eq!(i*j, k);
+        assert_eq!(j*i,-k);
+        assert_eq!(j*k, i);
+        assert_eq!(k*j,-i);
+        assert_eq!(k*i, j);
+        assert_eq!(i*k,-j);
+    }
 
     #[test]
     fn test_mulscalar() {
@@ -213,37 +362,6 @@ mod tests {
         let q1 = Quaternion::new(1.0, 2.0, 3.0, 4.0);
         let s = q1.norm();
         assert!(((q1/s).norm()-1.0).abs() < 1e-14);
-    }
-
-
-    #[test]
-    fn test_mul() {
-        let i = Quaternion::new(0.0, 1.0, 0.0, 0.0);
-        let j = Quaternion::new(0.0, 0.0, 1.0, 0.0);
-        let k = Quaternion::new(0.0, 0.0, 0.0, 1.0);
-        let e = Quaternion::new(-1.0,0.0,0.0,0.0);
-        assert_eq!(i*i, e);
-        assert_eq!(j*j, e);
-        assert_eq!(k*k, e);
-        assert_eq!(i*j*k, e);
-        assert_eq!(i*j, k);
-        assert_eq!(j*i, -k);
-    }
-
-    #[test]
-    fn test_inv() {
-        let p = Quaternion::new(1.0, -2.0, 3.0, 4.0);
-        assert_eq!(p*p.inv(), Quaternion::new(1.0, 0.0, 0.0, 0.0));
-        assert_eq!(p.inv()*p, Quaternion::new(1.0, 0.0, 0.0, 0.0));
-    }
-
-    #[test]
-    fn test_exp() {
-        let one: Float = 1.0;
-        assert_eq!(Quaternion::new(0.0, 0.0, 0.0, 0.0).exp(), Quaternion{ s: 1.0, x: 0.0, y: 0.0, z: 0.0});
-        assert_eq!(Quaternion::new(1.0, 0.0, 0.0, 0.0).exp(), Quaternion{ s: one.exp(), x: 0.0, y: 0.0, z: 0.0});
-        // use std::f64::consts::FRAC_PI_2;
-        // assert_eq!(Quaternion::new(0.0, FRAC_PI_2, 0.0, 0.0).exp(), Quaternion{ s: 0.0, x: 1.0, y: 0.0, z: 0.0});
     }
 
 
