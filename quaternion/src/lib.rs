@@ -56,17 +56,13 @@ impl Quaternion {
         }
     }
 
-    fn pow(self, x: Scalar) -> Self {
-        let phsq = self.x*self.x + self.y*self.y + self.z*self.z;
-        let ph = phsq.sqrt();
-        let qx = (self.s*self.s + phsq).sqrt().powf(x);
-        if phsq <= 0.0 {
-            Self {s: qx*(x*ph).cos(), x: 0.0, y: 0.0,  z: 0.0}
-        } else {
-            let qs = qx*(x*ph).sin()/ph;
-            Self {s: qx*(x*ph).cos(), x: qs*self.x, y: qs*self.y,  z: qs*self.z}
-        }
-    }
+    // fn pow(self, x: Scalar) -> Self {
+    //     let phsq = self.x*self.x + self.y*self.y + self.z*self.z;
+    //     let ph = phsq.sqrt();
+    //     let q0 = (self.s*self.s + phsq).sqrt().powf(x);
+    //     let qs = q0*((x*ph) + Scalar::EPSILON).sin()/((x*ph) + Scalar::EPSILON);
+    //     Self {s: q0*(x*ph).cos(), x: qs*self.x, y: qs*self.y,  z: qs*self.z}
+    // }
 }
 
 
@@ -289,12 +285,14 @@ mod tests {
         let one: Scalar = 1.0;
         assert_eq!(Quaternion::new(0.0, 0.0, 0.0, 0.0).exp(), Quaternion{s: 1.0, x: 0.0, y: 0.0, z: 0.0});
         assert_eq!(Quaternion::new(1.0, 0.0, 0.0, 0.0).exp(), Quaternion{s: one.exp(), x: 0.0, y: 0.0, z: 0.0});
+        // use std::f64::consts::FRAC_PI_2;
+        // assert_eq!(Quaternion::new(0.0, FRAC_PI_2, 0.0, 0.0).exp(), Quaternion{ s: 0.0, x: 1.0, y: 0.0, z: 0.0});
     }
 
     #[test]
     fn test_ln() {
-        let one: Scalar = 1.0;
-        let pi_2 = 2.0*one.atan();
+        let negone: Scalar = 1.0;
+        let pi_2 = 2.0*negone.atan();
         assert_eq!(Quaternion::new(0.0, 0.0, 0.0, 0.0).ln(), Quaternion{s: Scalar::NEG_INFINITY, x: 0.0, y: 0.0, z: 0.0});
         assert_eq!(Quaternion::new(1.0, 0.0, 0.0, 0.0).ln(), Quaternion{s: 0.0, x: 0.0, y: 0.0, z: 0.0});
         assert_eq!(Quaternion::new(0.0, 1.0, 0.0, 0.0).ln(), Quaternion{s: 0.0, x: pi_2, y: 0.0, z: 0.0});
@@ -302,15 +300,11 @@ mod tests {
         assert_eq!(Quaternion::new(0.0, 0.0, 0.0, 1.0).ln(), Quaternion{s: 0.0, x: 0.0, y: 0.0, z: pi_2});
     }
 
-    #[test]
-    fn test_pow() {
-        assert_eq!(Quaternion::new(1.0, 0.0, 0.0, 0.0).pow(0.0), Quaternion::new(1.0, 0.0, 0.0, 0.0));
-        assert_eq!(Quaternion::new(1.0, 0.0, 0.0, 0.0).pow(1.0), Quaternion::new(1.0, 0.0, 0.0, 0.0));
-        assert_eq!(Quaternion::new(2.0, 0.0, 0.0, 0.0).pow(1.0), Quaternion::new(2.0, 0.0, 0.0, 0.0));
-        assert_eq!(Quaternion::new(2.0, 0.0, 0.0, 0.0).pow(2.0), Quaternion::new(4.0, 0.0, 0.0, 0.0));
-
-        assert_eq!(Quaternion::new(1.0, 2.0, 3.0, 4.0).pow(0.0), Quaternion::new(1.0, 0.0, 0.0, 0.0));
-    }
+    // #[test]
+    // fn test_pow() {
+    //     let q = Quaternion::new(1.0, 2.0, 3.0, 4.0);
+    //     assert_eq!(q.pow(2.0).pow(0.5), q);
+    // }
 
     #[test]
     fn test_add() {
